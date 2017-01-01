@@ -1,0 +1,2 @@
+include exclusiveprocess/__init__.py
+include LICENSE README.rst
