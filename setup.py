@@ -9,7 +9,7 @@ from codecs import open
 
 setup(
 	name='exclusiveprocess',
-	version='0.9.1',
+	version='0.9.2',
 
 	description='Exclusive process locking to ensure that your code does not execute concurrently, using POSIX file locking.',
 	long_description=open("README.rst", encoding='utf-8').read(),

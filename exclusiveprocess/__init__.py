@@ -73,30 +73,37 @@ class Lock(object):
         self.lockfile = get_lock_file(self.name)
         my_pid = str(os.getpid())
 
-        # First get an exclusive lock on the file that holds this Python
-        # module, so that we can assume there won't be any race conditions
-        # within the following code.
-        with open(__file__, 'r+') as flock:
-            # Try to get a lock. This blocks until a lock is acquired. The
-            # lock is held until the flock file is closed at the end of the
-            # with block.
-            os.lockf(flock.fileno(), os.F_LOCK, 0)
+        # Write our process ID to the lockfile, if the lockfile doesn't
+        # yet exist.
+        try:
+            with open(self.lockfile, 'x') as f:
+                # Successfully opened a new file. Since the file is new
+                # there is no concurrent process. Write our pid. Lock
+                # first to prevent a race condition with the next block.
+                os.lockf(f.fileno(), os.F_LOCK, 0)
+                f.write(my_pid)
 
-            # Write our process ID to the lockfile, if the lockfile doesn't
-            # yet exist.
+        except FileExistsError:
+            # The lockfile already exists, or at least it did at the
+            # moment we tried to open it above. That probably indicates
+            # another process is running and is holding the lock.
+            #
+            # But it may contain a stale pid of a terminated process.
+            #
+            # And the file may have been deleted in a race condition.
+            # In that case, an OSError will probably be raised, which
+            # we'll re-wrap as a CannotAcquireLock.
+            #
+            # Open the lockfile in update ("r+") mode so we can check
+            # the PID inside it and, if the PID is stale, write ours
+            # to the file.
             try:
-                with open(self.lockfile, 'x') as f:
-                    # Successfully opened a new file. Since the file is new
-                    # there is no concurrent process. Write our pid.
-                    f.write(my_pid)
-
-            except FileExistsError:
-                # The lockfile already exixts, which probably indicates
-                # another process is running and is holding the lock.
-                # But it may contain a stale pid of a terminated process.
-                # Try to open the lockfile again, but this time with
-                # read+write access.
                 with open(self.lockfile, 'r+') as f:
+                    # Get an exclusive lock. This blocks until a lock is acquired. The
+                    # lock is held until the flock file is closed at the end of the
+                    # with block.
+                    os.lockf(f.fileno(), os.F_LOCK, 0)
+
                     # Read the pid in the file.
                     try:
                         existing_pid = int(f.read().strip())
@@ -121,17 +128,20 @@ class Lock(object):
                     f.write(my_pid)
                     f.truncate()
 
-            # Log success. Can't do this before the open since we expect
-            # it to fail sometimes.
-            logging.info("Acquired lock at " + self.lockfile + "...")
+                # Log success. Can't do this before the open since we expect
+                # it to fail sometimes.
+                logging.info("Acquired lock at " + self.lockfile + "...")
+
+            except OSError as e:
+                # There was a problem opening the existing lock file.
+                raise CannotAcquireLock("There was an error opening %s after an open in 'x' mode failed, which might indicate the lock was held just moments ago: %s." % (self.lockfile, str(e)))
 
     def _release(self):
         """Release the lock by deleting the lockfile."""
         try:
             os.unlink(self.lockfile)
 
-            # Log success. Can't do this before the open since we expect
-            # it to fail sometimes.
+            # Log success.
             logging.info("Released lock at " + self.lockfile + "...")
         except:
             # Ignore all errors.

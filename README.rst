@@ -30,11 +30,8 @@ The module uses POSIX file locking and a PID file:
    exception is thrown.
 
 -  Otherwise the lockfile is created (or overwritten) and this process's
-   integer process ID is written to the file.
-
--  An exclusive lock is held on the file containing this Python module
-   (``exclusiveprocess/__init__.py``) during the above to prevent race
-   conditions.
+   integer process ID is written to the file. POSIX file locking (lockf)
+   and open with O_EXCL is used to prevent race conditions.
 
 -  The lockfile is deleted when the ``with`` block or decorated function
    exits. Or when used with ``.forever()`` (see below), at program exit.
