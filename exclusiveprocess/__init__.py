@@ -54,10 +54,20 @@ class Lock(object):
         self._release()
 
     def __call__(self, *args, **kwargs):
-        if not self.decorated_function:
+        if self.decorated_function:
+            # The Lock instance was initialized with a callable,
+            # which is how it's used as a decorator like @Lock.
+            # Execute the decorated function inside a lock.
+            with self:
+                return self.decorated_function(*args, **kwargs)
+        elif len(args) == 1 and callable(args[0]):
+            # An instantiated Lock object can be applied to a
+            # function so enable @Lock(name="abc") syntax. In
+            # this case, we're supposed to return a new decorated
+            # function.
+            return Lock(*args, name=self.name, die=self.die)
+        else:
             raise TypeError("Lock object does not support __call__ except when used as a decorator.")
-        with self:
-            return self.decorated_function(*args, **kwargs)
 
     def forever(self):
         # Holds the lock for the lifetime of the Python process.

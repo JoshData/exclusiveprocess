@@ -65,12 +65,18 @@ Or as a decorator:
 
 ::
 
+    # lock name chosen based on __file__
+    @Lock
+    def myfunc():
+        print("This function cannot be executed concurrently!")
+
+    # lock name is "myprocess"
     @Lock(name="myprocess")
     def myfunc():
         print("This function cannot be executed concurrently!")
 
 The ``name`` is up to you. The lock is specific to the name. The name is
-system global (as global as the file system).
+system global (as global as the file system is).
 
 There are also some handy features for locking your whole program.
 
@@ -79,14 +85,14 @@ There are also some handy features for locking your whole program.
    Python source file), using
    `inspect.stack() <https://docs.python.org/3.5/library/inspect.html#inspect.stack>`__,
    which results in the Lock being automatically exclusive to all
-   invoations of your application.
+   invocations of your application.
 
 2. When you set the optional ``die`` keyword argument to ``True``,
    ``Lock`` will print an error to STDERR and exit the process
    immediately with exit code 1 if the lock cannot be acquired, instead
    of rasing an exception.
 
-3. The lock can be acquired with ``.forever()``, instead of ``with`` and
+3. The lock can be acquired with ``.forever()``, instead of ``with`` or
    decorator syntax, in which case the lock will be released only at
    program exit using
    `atexit <https://docs.python.org/3.5/library/atexit.html>`__.
