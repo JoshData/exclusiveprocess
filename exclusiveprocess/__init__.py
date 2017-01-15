@@ -29,7 +29,7 @@ class Lock(object):
         if name is None:
             # Use the name of the file containing the calling
             # function.
-            name = os.path.abspath(inspect.stack()[1].filename)
+            name = os.path.abspath(inspect.stack()[1][1])
 
         self.name = name
         self.die = die

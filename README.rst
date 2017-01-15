@@ -1,7 +1,7 @@
 exclusiveprocess - Simple Cross-Process Locking in Python
 =========================================================
 
-This is a simple Python 3 module for ensuring that your code does not
+This is a simple Python 3.4+ module for ensuring that your code does not
 execute concurrently in multiple processes, using POSIX file locking.
 
 The lock can be acquired easily using ``with`` syntax or as a decorator.
