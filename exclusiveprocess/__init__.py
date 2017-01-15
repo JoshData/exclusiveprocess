@@ -138,13 +138,14 @@ class Lock(object):
                     f.write(my_pid)
                     f.truncate()
 
-                # Log success. Can't do this before the open since we expect
-                # it to fail sometimes.
-                logging.info("Acquired lock at " + self.lockfile + "...")
-
             except OSError as e:
                 # There was a problem opening the existing lock file.
                 raise CannotAcquireLock("There was an error opening %s after an open in 'x' mode failed, which might indicate the lock was held just moments ago: %s." % (self.lockfile, str(e)))
+
+        # Log success. Can't do this before the open since we expect
+        # it to fail sometimes.
+        logging.info("Acquired lock at " + self.lockfile + "...")
+
 
     def _release(self):
         """Release the lock by deleting the lockfile."""
